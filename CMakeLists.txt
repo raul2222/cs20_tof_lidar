@@ -21,7 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-set(TARGET_NAME cs20l)
+set(TARGET_NAME cs20)
 
 message("configure ${TARGET_NAME}")
 
@@ -40,6 +40,9 @@ add_executable(cs20 ${SRC})
 ament_target_dependencies(cs20 PUBLIC rclcpp std_msgs sensor_msgs)
 
 target_link_libraries(cs20 PRIVATE cstreamer)
+target_link_libraries(cs20 PRIVATE csreconstruction)
+target_link_libraries(cs20 PRIVATE cscamera)
+target_link_libraries(cs20 PRIVATE SonixCamera)
 
 install( TARGETS 
   cs20
