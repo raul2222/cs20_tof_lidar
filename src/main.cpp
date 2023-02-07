@@ -31,39 +31,55 @@ class Cs20 : public rclcpp::Node
     Cs20()
     : Node("cs_20"), count_(0)
     {
-      publisher_ = this->create_publisher<std_msgs::msg::String>("topic", 10);
+      publisher_ = this->create_publisher<sensor_msgs::msg::Image>("depth", 10);
       timer_ = this->create_wall_timer(
       34ms, std::bind(&Cs20::timer_callback, this));
     }
 
   private:
     void timer_callback(){
-   	    auto message = std_msgs::msg::String();
-    	message.data = "Hello, world! " + std::to_string(count_++);
-      	RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
-      	publisher_->publish(message);
+   	    //auto message = std_msgs::msg::String();
+    	//message.data = "Hello, world! " + std::to_string(count_++);
+      	//RCLCPP_INFO(this->get_logger(), "Publishing: '%s'", message.data.c_str());
+      	
 
 		uint16_t* depth_data;
 		int depth_width = 0;
 		int depth_height = 0;
 		CSAPI_ERROR err = p_cstreamer->GetDepth(&depth_data, depth_width, depth_height);
+		
+		sensor_msgs::msg::Image output_image;
 
-
-		if (err == CSAPI_ERROR::SUCCESS)
-		{
-			std::string pre =  std::to_string(count_) + "-" + std::to_string(depth_width) + "x" + std::to_string(depth_height);
+		output_image.header.stamp     = this->get_clock()->now();
+		output_image.header.frame_id       = "face_link";
+  			 
+		output_image.height           = depth_height;
+  			
+		output_image.width            = depth_width;
 	
+  		output_image.encoding         = "16UC1";
+  		output_image.is_bigendian     = false;
+  			
+		output_image.step             = depth_height * depth_width;
+		//output_image.data = depth_data;
+output_image.data.resize(depth_height * depth_width);
+memcpy(&output_image.data[0],  depth_data, depth_height * depth_width);
+ 		/*sensor_msgs::fillImage( output_image,
+ 							sensor_msgs::image_encodings::16UC1,
+							depth_height,
+								depth_width,
+								depth_width*depth_height,
+								pFrameData->depth_data);*/
+
+		if (err == CSAPI_ERROR::SUCCESS){
+			publisher_->publish(output_image);
+			//std::string pre =  std::to_string(count_) + "-" + std::to_string(depth_width) + "x" + std::to_string(depth_height);
 			delete[]depth_data;
-
 		}
-
     }
 
-
-
-
     rclcpp::TimerBase::SharedPtr timer_;
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
     size_t count_;
 };
 
